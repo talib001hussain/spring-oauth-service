@@ -21,11 +21,19 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   main:
     allow-bean-definition-overriding: true
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${OAUTH2_CLIENT_ID:your-client-id}
+            client-secret: ${OAUTH2_CLIENT_SECRET:your-client-secret}
+            scope: user:email, read:user
+          google:
+            client-id: ${OAUTH2_GOOGLE_CLIENT_ID:your-google-client-id}
+            client-secret: ${OAUTH2_GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            scope: email, profile
 
 server:
   port: 8080
 
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET:your-secret-key-should-be-at-least-256-bits}
-  expiration: 86400000 # 24 hours in milliseconds
