@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: authdb
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: admin
     ports:
       - "5432:5432"
     volumes:
@@ -28,8 +28,11 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      JWT_SECRET: your-secret-key-should-be-at-least-256-bits
+      SPRING_DATASOURCE_PASSWORD: admin
+      OAUTH2_CLIENT_ID: your-client-id
+      OAUTH2_CLIENT_SECRET: your-client-secret
+      OAUTH2_GOOGLE_CLIENT_ID: your-google-client-id
+      OAUTH2_GOOGLE_CLIENT_SECRET: your-google-client-secret
     ports:
       - "8080:8080"
 

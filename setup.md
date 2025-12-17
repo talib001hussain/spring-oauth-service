@@ -36,24 +36,34 @@ This guide provides instructions on how to set up and run the Authentication Ser
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd auth
+   git clone https://github.com/talib001hussain/spring-oauth-service
+   cd spring-auth-service
    ```
 
 2. Configure the database connection in `src/main/resources/application.yaml`:
    ```yaml
    spring:
      datasource:
-       url: jdbc:postgresql://localhost:5432/authdb
+       url: jdbc:postgresql://localhost:5433/authdb
        username: postgres  # or your custom username
-       password: postgres  # or your custom password
+       password: admin  # or your custom password
    ```
 
-3. (Optional) Configure JWT secret and expiration in `src/main/resources/application.yaml`:
+3. (Optional) The application uses JWT for API authentication and OAuth2 for web interface authentication. The JWT configuration is handled internally by the JwtTokenUtil class, but you can configure OAuth2 providers in `src/main/resources/application.yaml`:
    ```yaml
-   jwt:
-     secret: your-secret-key-should-be-at-least-256-bits
-     expiration: 86400000  # 24 hours in milliseconds
+   spring:
+     security:
+       oauth2:
+         client:
+           registration:
+             github:
+               client-id: ${OAUTH2_CLIENT_ID:your-client-id}
+               client-secret: ${OAUTH2_CLIENT_SECRET:your-client-secret}
+               scope: user:email, read:user
+             google:
+               client-id: ${OAUTH2_GOOGLE_CLIENT_ID:your-google-client-id}
+               client-secret: ${OAUTH2_GOOGLE_CLIENT_SECRET:your-google-client-secret}
+               scope: email, profile
    ```
 
 ### 3. Build and Run
@@ -81,7 +91,7 @@ This guide provides instructions on how to set up and run the Authentication Ser
 
 ### 2. Run with Docker Compose
 
-1. Create a `docker-compose.yml` file:
+1. The project includes a `docker-compose.yml` file with the following configuration:
    ```yaml
    version: '3.8'
 
@@ -92,23 +102,32 @@ This guide provides instructions on how to set up and run the Authentication Ser
        environment:
          POSTGRES_DB: authdb
          POSTGRES_USER: postgres
-         POSTGRES_PASSWORD: postgres
+         POSTGRES_PASSWORD: admin
        ports:
-         - "5432:5432"
+         - "5433:5432"
        volumes:
          - postgres-data:/var/lib/postgresql/data
          - ./src/main/resources/db/docker_init.sql:/docker-entrypoint-initdb.d/init.sql
+       healthcheck:
+         test: ["CMD-SHELL", "pg_isready -U postgres"]
+         interval: 10s
+         timeout: 5s
+         retries: 5
 
      auth-service:
-       image: auth-service
+       build: .
        container_name: auth-service
        depends_on:
-         - postgres
+         postgres:
+           condition: service_healthy
        environment:
          SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
          SPRING_DATASOURCE_USERNAME: postgres
-         SPRING_DATASOURCE_PASSWORD: postgres
-         JWT_SECRET: your-secret-key-should-be-at-least-256-bits
+         SPRING_DATASOURCE_PASSWORD: admin
+         OAUTH2_CLIENT_ID: your-client-id
+         OAUTH2_CLIENT_SECRET: your-client-secret
+         OAUTH2_GOOGLE_CLIENT_ID: your-google-client-id
+         OAUTH2_GOOGLE_CLIENT_SECRET: your-google-client-secret
        ports:
          - "8080:8080"
 
@@ -142,6 +161,14 @@ This guide provides instructions on how to set up and run the Authentication Ser
   {
     "email": "user@example.com",
     "password": "password"
+  }
+  ```
+  Response:
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "type": "Bearer",
+    "email": "user@example.com"
   }
   ```
 

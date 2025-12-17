@@ -1,23 +1,20 @@
 package com.authentication.auth.service;
 
 import com.authentication.auth.model.User;
-import com.authentication.auth.security.JwtTokenUtil;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
 
     private final UserService userService;
-    private final JwtTokenUtil jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
 
-    public AuthService(UserService userService, JwtTokenUtil jwtTokenUtil, AuthenticationManager authenticationManager) {
+    public AuthService(UserService userService, AuthenticationManager authenticationManager) {
         this.userService = userService;
-        this.jwtTokenUtil = jwtTokenUtil;
         this.authenticationManager = authenticationManager;
     }
 
@@ -25,12 +22,22 @@ public class AuthService {
         return userService.createUser(email, password);
     }
 
-    public String signin(String email, String password) {
+    public Authentication signin(String email, String password) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
         );
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return jwtTokenUtil.generateToken(userDetails);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return authentication;
+    }
+
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String email = authentication.getName();
+        return userService.getUserByEmail(email).orElse(null);
     }
 }
